@@ -40,7 +40,7 @@ func (suite *RepoSuite) TestGetDevice() {
 	suite.Run("Unexisting Device", func() {
 		_, err := suite.repo.GetDevice("unexisting_serial")
 		assert.Error(suite.T(), err)
-		assert.EqualError(suite.T(), err, "no such device")
+		assert.EqualError(suite.T(), err, "not found: no device")
 	})
 }
 
@@ -84,7 +84,7 @@ func (suite *RepoSuite) TestDeleteDevice() {
 	suite.Run("Unexisting Device", func() {
 		err := suite.repo.DeleteDevice("unexisting_serial")
 		assert.Error(suite.T(), err)
-		assert.EqualError(suite.T(), err, "no such device")
+		assert.EqualError(suite.T(), err, "not found: no device")
 	})
 }
 
@@ -116,7 +116,7 @@ func (suite *RepoSuite) TestUpdateDevice() {
 		}
 		err := suite.repo.UpdateDevice(nonExistingDevice)
 		assert.Error(suite.T(), err)
-		assert.EqualError(suite.T(), err, "device not found")
+		assert.EqualError(suite.T(), err, "not found: no device")
 	})
 }
 

@@ -10,7 +10,7 @@ func (r *Repo) GetDevice(serialNum string) (d domain.Device, err error) {
 	defer r.mu.RUnlock()
 	d, ok := r.Devices[serialNum]
 	if !ok {
-		return domain.Device{}, fmt.Errorf("no such device")
+		return domain.Device{}, fmt.Errorf("%w: no device", domain.ErrNotFound)
 	}
 	return d, nil
 }
@@ -30,7 +30,7 @@ func (r *Repo) DeleteDevice(serialNum string) error {
 	defer r.mu.Unlock()
 	_, ok := r.Devices[serialNum]
 	if !ok {
-		return fmt.Errorf("no such device")
+		return fmt.Errorf("%w: no device", domain.ErrNotFound)
 	}
 	delete(r.Devices, serialNum)
 	return nil
@@ -44,5 +44,5 @@ func (r *Repo) UpdateDevice(d domain.Device) error {
 		return nil
 	}
 
-	return fmt.Errorf("device not found")
+	return fmt.Errorf("%w: no device", domain.ErrNotFound)
 }
