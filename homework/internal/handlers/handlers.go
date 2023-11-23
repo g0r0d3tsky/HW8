@@ -93,8 +93,8 @@ func (h *Handler) UpdateDevice(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RegisterHandlers(router *mux.Router) {
-	router.HandleFunc("/devices/{serialNum}", h.GetDevice).Methods(http.MethodGet)
-	router.HandleFunc("/devices", h.CreateDevice).Methods(http.MethodPost)
-	router.HandleFunc("/devices/{serialNum}", h.DeleteDevice).Methods(http.MethodDelete)
-	router.HandleFunc("/devices/{serialNum}", h.UpdateDevice).Methods(http.MethodPut)
+	router.HandleFunc("/api/v1/devices/{serialNum}", h.GetDevice).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/devices", h.CreateDevice).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/devices/{serialNum}", h.DeleteDevice).Methods(http.MethodDelete)
+	router.HandleFunc("/api/v1/devices/{serialNum}", h.UpdateDevice).Methods(http.MethodPut)
 }

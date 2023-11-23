@@ -155,3 +155,53 @@ func TestDeleteDevice_TableDriven(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateDevice_TableDriven(t *testing.T) {
+	mockDeviceUC := new(mocks.DeviceUseCase)
+	handler := &Handler{
+		deviceUC: mockDeviceUC,
+	}
+
+	testTable := []struct {
+		Device         domain.Device
+		ExpectedStatus int
+	}{
+		{
+			Device: domain.Device{
+				SerialNum: "1",
+				Model:     "ppp",
+				IP:        "0.9.9.0",
+			},
+			ExpectedStatus: http.StatusNoContent,
+		},
+		{
+			Device: domain.Device{
+				SerialNum: "2",
+				Model:     "ppp",
+				IP:        "0.9.9.0",
+			},
+			ExpectedStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, test := range testTable {
+		mockDeviceUC.On("UpdateDevice", test.Device).Return(nil)
+
+		deviceJSON, err := json.Marshal(test.Device)
+		if err != nil {
+			t.Errorf("error marshaling device: %s", err.Error())
+		}
+
+		req := httptest.NewRequest("PUT", "/devices/{serialNum}", bytes.NewBuffer(deviceJSON))
+		recorder := httptest.NewRecorder()
+		req = mux.SetURLVars(req, map[string]string{
+			"serialNum": test.Device.SerialNum,
+		})
+
+		handler.UpdateDevice(recorder, req)
+
+		if recorder.Code != test.ExpectedStatus {
+			t.Errorf("expected status %d, got %d", test.ExpectedStatus, recorder.Code)
+		}
+	}
+}
