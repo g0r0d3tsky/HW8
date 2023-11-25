@@ -3,7 +3,10 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 	"homework/internal/domain"
 	"homework/internal/handlers/mocks"
 	"net/http"
@@ -12,7 +15,68 @@ import (
 	"testing"
 )
 
-func TestGetDevice_TableDriven(t *testing.T) {
+func TestHandler_GetDevice(t *testing.T) {
+	mockDeviceUC := new(mocks.DeviceUseCase)
+	handler := &Handler{
+		deviceUC: mockDeviceUC,
+	}
+	type mockBehavior func(r *mocks.DeviceUseCase, device domain.Device)
+	testTable := []struct {
+		SerialNum            string
+		ExpectedStatus       int
+		ExpectedDevice       domain.Device
+		mockBehavior         mockBehavior
+		expectedResponseBody string
+	}{
+		{
+			SerialNum:      "1",
+			ExpectedStatus: http.StatusNotFound,
+			ExpectedDevice: domain.Device{
+				SerialNum: "1",
+				Model:     "ppp",
+				IP:        "0.9.9.0",
+			},
+			mockBehavior: func(r *mocks.DeviceUseCase, expectedDevice domain.Device) {
+				r.On("GetDevice", "1").Return(domain.Device{}, errors.New("can`t get device"))
+			},
+			expectedResponseBody: "can`t get device\n",
+		},
+		{
+			SerialNum:      "2",
+			ExpectedStatus: http.StatusOK,
+			ExpectedDevice: domain.Device{
+				SerialNum: "2",
+				Model:     "ppp",
+				IP:        "0.9.9.0",
+			},
+			mockBehavior: func(r *mocks.DeviceUseCase, expectedDevice domain.Device) {
+				r.On("GetDevice", "2").Return(expectedDevice, nil)
+			},
+			expectedResponseBody: "{\"SerialNum\":\"2\",\"Model\":\"ppp\",\"IP\":\"0.9.9.0\"}\n",
+		},
+	}
+
+	for _, test := range testTable {
+		test.mockBehavior(mockDeviceUC, test.ExpectedDevice)
+		req := httptest.NewRequest("GET", "/devices/{serialNum}", nil)
+		recorder := httptest.NewRecorder()
+
+		req = mux.SetURLVars(req, map[string]string{
+			"serialNum": test.SerialNum,
+		})
+
+		handler.GetDevice(recorder, req)
+
+		if recorder.Code != test.ExpectedStatus {
+			t.Errorf("expected status %d, got %d", test.ExpectedStatus, recorder.Code)
+		}
+
+		assert.Equal(t, recorder.Code, test.ExpectedStatus)
+		assert.Equal(t, recorder.Body.String(), test.expectedResponseBody)
+	}
+}
+
+func TestHandler_GetDeviceWithError(t *testing.T) {
 
 	mockDeviceUC := new(mocks.DeviceUseCase)
 	handler := &Handler{
@@ -71,7 +135,7 @@ func TestGetDevice_TableDriven(t *testing.T) {
 		}
 	}
 }
-func TestCreateDevice_TableDriven(t *testing.T) {
+func TestHandler_CreateDevice(t *testing.T) {
 	mockDeviceUC := new(mocks.DeviceUseCase)
 	handler := &Handler{
 		deviceUC: mockDeviceUC,
@@ -118,7 +182,38 @@ func TestCreateDevice_TableDriven(t *testing.T) {
 	}
 }
 
-func TestDeleteDevice_TableDriven(t *testing.T) {
+func TestHandler_CreateDeviceWithUseCaseErr(t *testing.T) {
+	mockDeviceUC := new(mocks.DeviceUseCase)
+
+	handler := &Handler{
+		deviceUC: mockDeviceUC,
+	}
+
+	device := domain.Device{
+		SerialNum: "1",
+		Model:     "ppp",
+		IP:        "0.9.9.0",
+	}
+
+	expectedStatus := http.StatusConflict
+	mockDeviceUC.On("CreateDevice", device).Return(errors.New("can`t create device"))
+
+	deviceJSON, err := json.Marshal(device)
+	if err != nil {
+		t.Errorf("error marshaling device: %s", err.Error())
+	}
+
+	req := httptest.NewRequest("POST", "/devices", bytes.NewBuffer(deviceJSON))
+	recorder := httptest.NewRecorder()
+	handler.CreateDevice(recorder, req)
+
+	if recorder.Code != expectedStatus {
+		t.Errorf("expected status %d, got %d", expectedStatus, recorder.Code)
+	}
+
+}
+
+func TestHandler_DeleteDevice(t *testing.T) {
 	mockDeviceUC := new(mocks.DeviceUseCase)
 	handler := &Handler{
 		deviceUC: mockDeviceUC,
@@ -155,16 +250,43 @@ func TestDeleteDevice_TableDriven(t *testing.T) {
 		}
 	}
 }
-
-func TestUpdateDevice_TableDriven(t *testing.T) {
+func TestHandler_DeleteDeviceWithUCError(t *testing.T) {
 	mockDeviceUC := new(mocks.DeviceUseCase)
 	handler := &Handler{
 		deviceUC: mockDeviceUC,
 	}
+	device := domain.Device{
+		SerialNum: "1",
+		Model:     "ppp",
+		IP:        "0.9.9.0",
+	}
+	expectedStatus := http.StatusNotFound
+	expectedError := fmt.Errorf("%w: no device", domain.ErrNotFound)
+	mockDeviceUC.On("DeleteDevice", device.SerialNum).Return(expectedError)
 
+	req := httptest.NewRequest("DELETE", "/devices/{serialNum}", nil)
+	recorder := httptest.NewRecorder()
+
+	req = mux.SetURLVars(req, map[string]string{
+		"serialNum": device.SerialNum,
+	})
+
+	handler.DeleteDevice(recorder, req)
+
+	assert.Equal(t, recorder.Code, expectedStatus)
+}
+
+func TestHandler_UpdateDevice(t *testing.T) {
+	mockDeviceUC := new(mocks.DeviceUseCase)
+	handler := &Handler{
+		deviceUC: mockDeviceUC,
+	}
+	type mockBehavior func(r *mocks.DeviceUseCase, device domain.Device)
 	testTable := []struct {
-		Device         domain.Device
-		ExpectedStatus int
+		Device               domain.Device
+		ExpectedStatus       int
+		mockBehavior         mockBehavior
+		expectedResponseBody string
 	}{
 		{
 			Device: domain.Device{
@@ -172,7 +294,11 @@ func TestUpdateDevice_TableDriven(t *testing.T) {
 				Model:     "ppp",
 				IP:        "0.9.9.0",
 			},
-			ExpectedStatus: http.StatusNoContent,
+			ExpectedStatus: http.StatusNotFound,
+			mockBehavior: func(r *mocks.DeviceUseCase, device domain.Device) {
+				r.On("UpdateDevice", device).Return(errors.New("can`t update device"))
+			},
+			expectedResponseBody: "can`t update device\n",
 		},
 		{
 			Device: domain.Device{
@@ -181,13 +307,16 @@ func TestUpdateDevice_TableDriven(t *testing.T) {
 				IP:        "0.9.9.0",
 			},
 			ExpectedStatus: http.StatusNoContent,
+			mockBehavior: func(r *mocks.DeviceUseCase, device domain.Device) {
+				r.On("UpdateDevice", device).Return(nil)
+			},
+			expectedResponseBody: "",
 		},
 	}
 
 	for _, test := range testTable {
-		mockDeviceUC.On("UpdateDevice", test.Device).Return(nil)
-
 		deviceJSON, err := json.Marshal(test.Device)
+		test.mockBehavior(mockDeviceUC, test.Device)
 		if err != nil {
 			t.Errorf("error marshaling device: %s", err.Error())
 		}
@@ -200,8 +329,7 @@ func TestUpdateDevice_TableDriven(t *testing.T) {
 
 		handler.UpdateDevice(recorder, req)
 
-		if recorder.Code != test.ExpectedStatus {
-			t.Errorf("expected status %d, got %d", test.ExpectedStatus, recorder.Code)
-		}
+		assert.Equal(t, recorder.Body.String(), test.expectedResponseBody)
+		assert.Equal(t, recorder.Code, test.ExpectedStatus)
 	}
 }

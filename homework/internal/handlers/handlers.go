@@ -27,7 +27,7 @@ func (h *Handler) CreateDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if net.ParseIP(device.IP).To4() == nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Invalid IP address", http.StatusBadRequest)
 		return
 	}
 
@@ -45,7 +45,7 @@ func (h *Handler) GetDevice(w http.ResponseWriter, r *http.Request) {
 
 	device, err := h.deviceUC.GetDevice(serialNum)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "can`t get device", http.StatusNotFound)
 		return
 	}
 

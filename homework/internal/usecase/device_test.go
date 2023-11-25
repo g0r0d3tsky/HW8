@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"homework/internal/domain"
@@ -21,7 +22,7 @@ func TestCreateDeviceMock(t *testing.T) {
 	mockRepo.AssertCalled(t, "CreateDevice", mock.Anything)
 	assert.NoError(t, err)
 }
-func TestGetDevice(t *testing.T) {
+func TestGetDeviceMock(t *testing.T) {
 	testCases := []struct {
 		serialNum      string
 		expectedDevice domain.Device
@@ -63,6 +64,34 @@ func TestGetDevice(t *testing.T) {
 		assert.Equal(t, tc.expectedError, err)
 	}
 }
+
+func TestDeleteDeviceMock(t *testing.T) {
+	mockRepo := new(mocks.Device)
+	useCase := &impl.UseCase{
+		Repo: mockRepo,
+	}
+	serialNum := "1"
+	mockRepo.On("DeleteDevice", serialNum).Return(errors.New("no device"))
+	err := useCase.DeleteDevice(serialNum)
+	assert.Equal(t, errors.New("no device"), err)
+
+}
+
+func TestUpdateDeviceMock(t *testing.T) {
+	mockRepo := new(mocks.Device)
+	useCase := &impl.UseCase{
+		Repo: mockRepo,
+	}
+	device := domain.Device{
+		SerialNum: "1",
+		Model:     "ppp",
+		IP:        "1.1.1.1",
+	}
+	mockRepo.On("UpdateDevice", device).Return(errors.New("no device"))
+	err := useCase.UpdateDevice(device)
+	assert.Equal(t, errors.New("no device"), err)
+}
+
 func FuzzCreateDevice(f *testing.F) {
 	repo := repository.New()
 	service := impl.New(repo)
