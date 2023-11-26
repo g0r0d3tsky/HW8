@@ -5,8 +5,8 @@ import (
 )
 
 type DeviceUseCase interface {
-	GetDevice(string) (domain.Device, error)
+	GetDevice(serialNum string) (domain.Device, error)
 	CreateDevice(d domain.Device) error
-	DeleteDevice(string) error
-	UpdateDevice(domain.Device) error
+	DeleteDevice(serialNum string) error
+	UpdateDevice(d domain.Device) error
 }

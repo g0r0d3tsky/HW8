@@ -1,25 +1,18 @@
 package config
 
 import (
-	"fmt"
-	"github.com/caarlos0/env/v9"
+	"github.com/g0r0d3tsky/parser/pkg/cfgparser"
 	"net"
 )
 
-type Config struct {
-	Host string `env:"HOST"`
-	Port string `env:"PORT"`
+func ServerAddress(cfg cfgparser.Config) string {
+	return net.JoinHostPort(cfg.Host, cfg.Port)
 }
 
-func (c *Config) ServerAddress() string {
-	return net.JoinHostPort(c.Host, c.Port)
-}
-
-func Read() (*Config, error) {
-	var config Config
-
-	if err := env.Parse(&config); err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
+func Read(filePath string) (*cfgparser.Config, error) {
+	config, err := cfgparser.ParseYAML(filePath)
+	if err != nil {
+		return nil, err
 	}
 	return &config, nil
 }
