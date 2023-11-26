@@ -10,7 +10,7 @@ type UseCase struct {
 	Repo repository.Device
 }
 
-func (uc *UseCase) GetDevice(serialNum string) (*domain.Device, error) {
+func (uc *UseCase) GetDevice(serialNum string) (domain.Device, error) {
 	device, err := uc.Repo.GetDevice(serialNum)
 	if err != nil {
 		return device, err

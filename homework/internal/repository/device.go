@@ -5,14 +5,14 @@ import (
 	"homework/internal/domain"
 )
 
-func (r *Repo) GetDevice(serialNum string) (*domain.Device, error) {
+func (r *Repo) GetDevice(serialNum string) (d domain.Device, err error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	d, ok := r.Devices[serialNum]
 	if !ok {
-		return nil, fmt.Errorf("%w: no device", domain.ErrNotFound)
+		return domain.Device{}, fmt.Errorf("%w: no device", domain.ErrNotFound)
 	}
-	return &d, nil
+	return d, nil
 }
 
 func (r *Repo) CreateDevice(d domain.Device) error {
