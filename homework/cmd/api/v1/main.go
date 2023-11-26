@@ -23,5 +23,5 @@ func main() {
 	handler := handlers.NewHandler(deviceUC)
 	handler.RegisterHandlers(router)
 
-	log.Fatal(http.ListenAndServe(config.ServerAddress(c), router))
+	log.Fatal(http.ListenAndServe(config.ServerAddress(*c), router))
 }

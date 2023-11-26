@@ -9,10 +9,10 @@ func ServerAddress(cfg cfgparser.Config) string {
 	return net.JoinHostPort(cfg.Host, cfg.Port)
 }
 
-func Read(filePath string) (cfgparser.Config, error) {
+func Read(filePath string) (*cfgparser.Config, error) {
 	config, err := cfgparser.ParseYAML(filePath)
 	if err != nil {
-		return cfgparser.Config{}, err
+		return nil, err
 	}
-	return config, nil
+	return &config, nil
 }
